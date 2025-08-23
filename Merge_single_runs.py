@@ -42,11 +42,23 @@ def merge_runs(input_folder, output_folder, run_min, run_max, tree_name="CdEvent
         print(f"\nMerging {len(file_list)} files for RUN{run_number}...")
 
         chain = ROOT.TChain(tree_name)
+        total_muons = 0  # Move muon sum here
         for file_path in sorted(file_list):
             chain.Add(file_path)
+            # Sum muon counts while adding files to chain
+            f = ROOT.TFile(file_path)
+            muon_param = f.Get("nMuons")
+            if muon_param:
+                total_muons += muon_param.GetVal()
+            f.Close()
 
         output_path = os.path.join(output_folder, f"RUN{run_number}_merged.root")
         chain.Merge(output_path)
+        # Write total muon count to merged file
+        output_file = ROOT.TFile(output_path, "UPDATE")
+        muon_param = ROOT.TParameter("int")("nMuons", total_muons)
+        muon_param.Write()
+        output_file.Close()
         print(f"Saved: {output_path}")
 
 if __name__ == "__main__":

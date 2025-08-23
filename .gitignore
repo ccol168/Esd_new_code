@@ -12,3 +12,4 @@
 *.pcm
 *.d
 *.so
+/.vscode
