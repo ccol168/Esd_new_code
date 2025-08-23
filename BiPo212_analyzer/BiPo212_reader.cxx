@@ -205,6 +205,13 @@ bool BiPo212_reader::initialize() {
     //events->Branch("Recot0",&CdRecot0);
     //events->Branch("RecoEnergyQuality",&CdRecoEnergyQuality);
     //events->Branch("RecoPositionQuality",&CdRecoPositionQuality);
+
+	// Create summary tree for muon count
+	summaryTree = rw->bookTree(*m_par, "summary", "Summary Tree");
+	summaryTree->Branch("nMuonsTotal", &nMuonsTotal, "nMuonsTotal/I");
+	summaryTree->Branch("runLength", &runLength, "runLength/D");
+	minEventTimestamp.Set(0, true, 0, false);
+	maxEventTimestamp.Set(0, true, 0, false);
 /*
     events->Branch("x_CM",&x_CM,"x_CM/F");
     events->Branch("y_CM",&y_CM,"y_CM/F");
@@ -263,7 +270,18 @@ bool BiPo212_reader::execute() {
 
 	//auto recoheader = JM::getHeaderObject<JM::CdVertexRecHeader>(nav);
 	//if (recoheader) recoevent = (JM::CdVertexRecEvt*)calibheader->event();
-	timestamp = nav->TimeStamp();	
+	timestamp = nav->TimeStamp();
+	// Track min and max event timestamps robustly
+	double ts = timestamp.GetSec() + timestamp.GetNanoSec() * 1e-9;
+	double minTs = minEventTimestamp.GetSec() + minEventTimestamp.GetNanoSec() * 1e-9;
+	double maxTs = maxEventTimestamp.GetSec() + maxEventTimestamp.GetNanoSec() * 1e-9;
+	if (minEventTimestamp.GetSec() == 0 && minEventTimestamp.GetNanoSec() == 0) {
+		minEventTimestamp = timestamp;
+		maxEventTimestamp = timestamp;
+	} else {
+		if (ts < minTs) minEventTimestamp = timestamp;
+		if (ts > maxTs) maxEventTimestamp = timestamp;
+	}
 
 	if (!calibevent || !oecevent) {
 		LogInfo << "No CalibEvt or OecEvt found, skipping..." << std::endl;
@@ -488,18 +506,17 @@ bool BiPo212_reader::finalize() {
         CorrTimesHistogramArr = nullptr;
     }
 	// Save muon count to output ROOT file using RootWriter
-	SniperPtr<RootWriter> rw(getParent(), "RootWriter");
-	if (!rw.invalid()) {
-		TDirectory* outdir = rw->getDir(""); // Get root directory of output file
-		if (outdir) {
-			TFile* outfile = outdir->GetFile();
-			if (outfile) {
-				outfile->cd();
-				TParameter<int> muonCount("nMuons", nMuons);
-				muonCount.Write();
-			}
-		}
+	// Fill summary tree with final muon count and run length
+	nMuonsTotal = nMuons;
+	// Calculate run length using min and max timestamps
+	double minSec = minEventTimestamp.GetSec() + minEventTimestamp.GetNanoSec() * 1e-9;
+	double maxSec = maxEventTimestamp.GetSec() + maxEventTimestamp.GetNanoSec() * 1e-9;
+	if (minSec > 0 && maxSec > 0 && maxSec >= minSec) {
+		runLength = maxSec - minSec;
+	} else {
+		runLength = 0.0;
 	}
+	if (summaryTree) summaryTree->Fill();
     return true;
     
 }

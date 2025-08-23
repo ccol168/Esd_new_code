@@ -2,6 +2,7 @@ import os
 import re
 import argparse
 import ROOT
+import ctypes
 
 def is_valid_root_file(file_path, tree_name):
     """Check if the ROOT file is valid and contains a non-empty TTree."""
@@ -18,11 +19,8 @@ def is_valid_root_file(file_path, tree_name):
         return False
 
 def merge_runs(input_folder, output_folder, run_min, run_max, tree_name="CdEvents"):
-    # Regex pattern to extract run number
     pattern = re.compile(r"RUN(\d+)_.*\.root")
-
     runs = {}
-
     for filename in os.listdir(input_folder):
         match = pattern.match(filename)
         if match:
@@ -33,31 +31,34 @@ def merge_runs(input_folder, output_folder, run_min, run_max, tree_name="CdEvent
                     runs.setdefault(run_number, []).append(full_path)
                 else:
                     print(f"Skipping invalid or empty file: {filename}")
-
     os.makedirs(output_folder, exist_ok=True)
-
     for run_number, file_list in runs.items():
         if not file_list:
             continue
         print(f"\nMerging {len(file_list)} files for RUN{run_number}...")
-
         chain = ROOT.TChain(tree_name)
-        total_muons = 0  # Move muon sum here
+        total_muons = 0
+        total_duration = 0.0
         for file_path in sorted(file_list):
             chain.Add(file_path)
-            # Sum muon counts while adding files to chain
             f = ROOT.TFile(file_path)
-            muon_param = f.Get("nMuons")
-            if muon_param:
-                total_muons += muon_param.GetVal()
+            summary_tree = f.Get("summary")
+            if summary_tree:
+                for entry in summary_tree:
+                    total_muons += getattr(entry, "nMuonsTotal", 0)
+                    total_duration += getattr(entry, "runLength", 0.0)
             f.Close()
-
         output_path = os.path.join(output_folder, f"RUN{run_number}_merged.root")
         chain.Merge(output_path)
-        # Write total muon count to merged file
+        # Write summary tree with muon count and run length as scalars
         output_file = ROOT.TFile(output_path, "UPDATE")
-        muon_param = ROOT.TParameter("int")("nMuons", total_muons)
-        muon_param.Write()
+        summary_tree = ROOT.TTree("summary", "Summary Tree")
+        nMuonsTotal = ctypes.c_int(total_muons)
+        runLength = ctypes.c_double(total_duration)
+        summary_tree.Branch("nMuonsTotal", ctypes.byref(nMuonsTotal), "nMuonsTotal/I")
+        summary_tree.Branch("runLength", ctypes.byref(runLength), "runLength/D")
+        summary_tree.Fill()
+        summary_tree.Write()
         output_file.Close()
         print(f"Saved: {output_path}")
 

@@ -42,6 +42,10 @@ class BiPo212_reader : public AlgBase //Change the name to something more descri
 	float Interface_level;
 
         TTree* events ;
+        TTree* summaryTree ;
+        int nMuonsTotal = 0;
+        double runLength = 0.0;
+        TTimeStamp minEventTimestamp, maxEventTimestamp;
 	double* kernel;
 	TSpectrum spectrum;
 	//TTree* wpEvents;
