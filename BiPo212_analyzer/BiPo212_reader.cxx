@@ -490,8 +490,8 @@ bool BiPo212_reader::finalize() {
 	// Save muon count to output ROOT file using RootWriter
 	SniperPtr<RootWriter> rw(getParent(), "RootWriter");
 	if (!rw.invalid()) {
-		TParameter<int> muonCount("nMuons", nMuons);
-		rw->WriteObject(&muonCount, "nMuons");
+		TParameter<int>* muonCount = new TParameter<int>("nMuons", nMuons);
+		rw->attach("tree", muonCount); // "tree" is the fKey for your output file
 	}
     return true;
     
