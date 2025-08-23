@@ -46,6 +46,8 @@ class BiPo212_reader : public AlgBase //Change the name to something more descri
 	TSpectrum spectrum;
 	//TTree* wpEvents;
 
+        int nMuons = 0; // Counter for detected muons
+
 
 };
 

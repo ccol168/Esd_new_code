@@ -35,6 +35,10 @@
 #include "TH1F.h"
 #include "TTree.h"
 
+#include "TParameter.h"
+
+int nMuons = 0; // Counter for detected muons
+
 int BinsNumber = 200;
 
 double ReadInterfaceLevel (TTimeStamp FirstTimeStamp) {
@@ -310,7 +314,8 @@ bool BiPo212_reader::execute() {
 		if (total_npe > 30000) {
 			last_muon_timestamp = timestamp;
 			//LogDebug << "Found muon at " << timestamp.GetSec() << " " << timestamp.GetNanoSec() << endl;
-			return true;
+				nMuons++; // Increment muon counter
+				return true;
 		}
 		int SecondDifference = timestamp.GetSec() - last_muon_timestamp.GetSec();
 
@@ -485,6 +490,9 @@ bool BiPo212_reader::finalize() {
         delete[] CorrTimesHistogramArr;
         CorrTimesHistogramArr = nullptr;
     }
+	// Save muon count to output ROOT file
+	TParameter<int> muonCount("nMuons", nMuons);
+	muonCount.Write();
     return true;
     
 }
