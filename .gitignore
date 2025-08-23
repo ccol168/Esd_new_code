@@ -1,0 +1,14 @@
+/analysis
+/c_launch
+/root
+/sub
+/sh
+/out
+/log
+/err
+/list
+/list_rtraw
+*.root
+*.pcm
+*.d
+*.so
