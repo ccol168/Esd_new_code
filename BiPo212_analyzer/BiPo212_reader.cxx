@@ -34,6 +34,7 @@
 
 #include "TH1F.h"
 #include "TTree.h"
+#include "TParameter.h"
 
 int BinsNumber = 200;
 
@@ -490,7 +491,7 @@ bool BiPo212_reader::finalize() {
 	SniperPtr<RootWriter> rw(getParent(), "RootWriter");
 	if (!rw.invalid()) {
 		TParameter<int> muonCount("nMuons", nMuons);
-		rw->writeObject(&muonCount, "nMuons");
+		rw->WriteObject(&muonCount, "nMuons");
 	}
     return true;
     
