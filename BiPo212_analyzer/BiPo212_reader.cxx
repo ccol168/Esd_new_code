@@ -207,7 +207,7 @@ bool BiPo212_reader::initialize() {
     //events->Branch("RecoPositionQuality",&CdRecoPositionQuality);
 
 	// Create summary tree for muon count
-	summaryTree = rw->bookTree(*m_par, "summary", "Summary Tree");
+	summaryTree = rw->bookTree(*m_par, "tree/summary", "Summary Tree");
 	summaryTree->Branch("nMuonsTotal", &nMuonsTotal, "nMuonsTotal/I");
 	summaryTree->Branch("runLength", &runLength, "runLength/D");
 	minEventTimestamp.Set(0, true, 0, false);
