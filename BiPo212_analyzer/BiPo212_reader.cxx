@@ -38,112 +38,17 @@
 
 int BinsNumber = 200;
 
-double ReadInterfaceLevel (TTimeStamp FirstTimeStamp) {
-	
-	TFile *fLSlevel = TFile::Open("root://junoeos01.ihep.ac.cn//eos/juno/groups/DataQuality/LSfilling/massVolumeLS.root");
-    		if (not fLSlevel) {
-        	cout << "Cannot open the level LS file" << std::endl;
-        	exit(1);
-    	}
-
-    	double xpoint, ypoint;
-    	TGraph *interLevel_graph = (TGraph*)fLSlevel->Get("inter_level_fr_graph");
-
-    	double closest, time_diff;
-    	double LS_level;
-    	double targetTime = static_cast<double>(FirstTimeStamp.GetSec()) + FirstTimeStamp.GetNanoSec() * 1e-9;
-
-    	for (int i = 0; i < interLevel_graph->GetN(); i++) {
-        	interLevel_graph->GetPoint(i, xpoint, ypoint);
-        	time_diff = std::abs(xpoint - targetTime);
-        	if (i==0) {
-            		closest = time_diff;
-            		LS_level = ypoint;
-        	} else if (closest > time_diff) {
-            		closest = time_diff;
-            		LS_level = ypoint;
-        	}
-    	}
-
-    	delete interLevel_graph;
-    	fLSlevel->Close();
-    	delete fLSlevel;
-
-    	double InterfaceLevel = (LS_level - 20.) * 1000. ;
-
-	return InterfaceLevel;
-	
-}
-
-std::vector<int> MakeHistogram (std::vector <float> inVec) {
-
-	double MinBinTime = 0.;
-	double MaxBinTime = 1200.;
-	double BinSize = (MaxBinTime - MinBinTime) / BinsNumber;
-	std::vector <int> Histogram(BinsNumber,0);
-
-	for (auto element : inVec) {
-		int BinIndex = (element - MinBinTime) / BinSize ;
-		Histogram[BinIndex]++;
-	}
-
-	return Histogram;
-}	
-
-std::vector <double> GetKernel (const char* filename) {
-  TFile* file = new TFile(filename, "READ");
-  if (!file || file->IsZombie()) {
-    std::cout << "Error opening file" << std::endl;
-    return {};
-  }
-  TH1F* hist = nullptr;
-  file->GetObject("histo", hist);
-
-  if (!hist) {
-    std::cout << "Histogram named histo not found" << std::endl;
-    file->Close();
-    return {};
-  }
-
-  std::vector<double> entries;
-  int nBins = hist->GetNbinsX();
-  for (int i = 1; i <= nBins; ++i) {
-      entries.push_back(hist->GetBinContent(i));
-  }
-
-  file->Close();
-  return entries;
-
-}
-
 double distance (float x, float y, float z, float x1, float y1, float z1) {
 	return sqrt(pow(x-x1,2)+pow(y-y1,2)+pow(z-z1,2));
 }
 
-tuple<float,float,float> Intersection (float x_int, float y_int, float z_int, float x_PMT, float y_PMT, float z_PMT, float Interface_level) {
-
-    float t = (Interface_level - z_int) / (z_PMT - z_int) ;
-    float x_on_interface = x_int + (x_PMT - x_int) * t;
-    float y_on_interface = y_int + (y_PMT - y_int) * t;
-
-    return make_tuple(x_on_interface,y_on_interface,Interface_level);
-}
-
-double calculate_ToF (float x_int, float y_int, float z_int, float x_PMT, float y_PMT, float z_PMT, float Interface_level) {
+double calculate_ToF (float x_int, float y_int, float z_int, float x_PMT, float y_PMT, float z_PMT) {
 
     float n_water = 1.29;
     float n_scint = 1.54;
     float c = 299.792 ; // mm/ns
 
-    if (z_int < Interface_level && z_PMT < Interface_level) {
-        return distance(x_int,y_int,z_int,x_PMT,y_PMT,z_PMT)/c * n_water ;
-    } else if (z_int > Interface_level && z_PMT > Interface_level) {
-        return distance(x_int,y_int,z_int,x_PMT,y_PMT,z_PMT)/c * n_scint;
-    } else {
-        tuple<float,float,float> Point_on_interface = Intersection(x_int, y_int, z_int, x_PMT,  y_PMT,  z_PMT, Interface_level);
-        return distance(x_int,y_int,z_int,get<0>(Point_on_interface),get<1>(Point_on_interface),get<2>(Point_on_interface))/c * n_scint +
-            distance(get<0>(Point_on_interface),get<1>(Point_on_interface),get<2>(Point_on_interface),x_PMT,y_PMT,z_PMT)/c * n_water;
-    }
+    return distance(x_int,y_int,z_int,x_PMT,y_PMT,z_PMT)/c * n_scint;
 }
 
 DECLARE_ALGORITHM(BiPo212_reader);
@@ -255,13 +160,9 @@ bool BiPo212_reader::execute() {
 	auto nav = m_buf->curEvt();
 
 	if (m_iEvt == 1) {
-		Interface_level = ReadInterfaceLevel(nav->TimeStamp());
 		LogDebug << "FirstTimeStamp = " << (nav->TimeStamp()).AsString() << endl;
 	}
-	
-	LogDebug << "Interface level = " << Interface_level << endl;
-//	const auto& paths = nav->getPath();
-	
+
 	auto oecheader = JM::getHeaderObject<JM::OecHeader>(nav);
 	if (oecheader) oecevent = (JM::OecEvt*)oecheader->event("JM::OecEvt");
 
@@ -349,7 +250,7 @@ bool BiPo212_reader::execute() {
 		} 
 		
 		for (int i=0; i<time.size() ; i++) {
-			corr_time.push_back(time[i] - calculate_ToF(CdRecox,CdRecoy,CdRecoz,PMTs_Pos.GetX(PMTID[i]),PMTs_Pos.GetY(PMTID[i]),PMTs_Pos.GetZ(PMTID[i]),Interface_level));
+			corr_time.push_back(time[i] - calculate_ToF(CdRecox,CdRecoy,CdRecoz,PMTs_Pos.GetX(PMTID[i]),PMTs_Pos.GetY(PMTID[i]),PMTs_Pos.GetZ(PMTID[i])));
 		}
 
 		float MinTime = *std::min_element(corr_time.begin(),corr_time.end());
