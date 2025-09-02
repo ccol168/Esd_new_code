@@ -38,6 +38,47 @@
 
 int BinsNumber = 200;
 
+std::vector<int> MakeHistogram (std::vector <float> inVec) {
+
+	double MinBinTime = 0.;
+	double MaxBinTime = 1200.;
+	double BinSize = (MaxBinTime - MinBinTime) / BinsNumber;
+	std::vector <int> Histogram(BinsNumber,0);
+
+	for (auto element : inVec) {
+		int BinIndex = (element - MinBinTime) / BinSize ;
+		Histogram[BinIndex]++;
+	}
+
+	return Histogram;
+}	
+
+std::vector <double> GetKernel (const char* filename) {
+  TFile* file = new TFile(filename, "READ");
+  if (!file || file->IsZombie()) {
+    std::cout << "Error opening file" << std::endl;
+    return {};
+  }
+  TH1F* hist = nullptr;
+  file->GetObject("histo", hist);
+
+  if (!hist) {
+    std::cout << "Histogram named histo not found" << std::endl;
+    file->Close();
+    return {};
+  }
+
+  std::vector<double> entries;
+  int nBins = hist->GetNbinsX();
+  for (int i = 1; i <= nBins; ++i) {
+      entries.push_back(hist->GetBinContent(i));
+  }
+
+  file->Close();
+  return entries;
+
+}
+
 double distance (float x, float y, float z, float x1, float y1, float z1) {
 	return sqrt(pow(x-x1,2)+pow(y-y1,2)+pow(z-z1,2));
 }
