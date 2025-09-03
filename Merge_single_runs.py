@@ -3,6 +3,7 @@ import re
 import argparse
 import ROOT
 import ctypes
+import array
 
 def is_valid_root_file(file_path, tree_name):
     """Check if the ROOT file is valid and contains a non-empty TTree."""
@@ -50,13 +51,13 @@ def merge_runs(input_folder, output_folder, run_min, run_max, tree_name="CdEvent
             f.Close()
         output_path = os.path.join(output_folder, f"RUN{run_number}_merged.root")
         chain.Merge(output_path)
-        # Write summary tree with muon count and run length as scalars
+        # Write summary tree with muon count and run length as scalars using array module
         output_file = ROOT.TFile(output_path, "UPDATE")
         summary_tree = ROOT.TTree("summary", "Summary Tree")
-        nMuonsTotal = ctypes.c_int(total_muons)
-        runLength = ctypes.c_double(total_duration)
-        summary_tree.Branch("nMuonsTotal", ctypes.byref(nMuonsTotal), "nMuonsTotal/I")
-        summary_tree.Branch("runLength", ctypes.byref(runLength), "runLength/D")
+        nMuonsTotal = array.array('i', [total_muons])
+        runLength = array.array('d', [total_duration])
+        summary_tree.Branch("nMuonsTotal", nMuonsTotal, "nMuonsTotal/I")
+        summary_tree.Branch("runLength", runLength, "runLength/D")
         summary_tree.Fill()
         summary_tree.Write()
         output_file.Close()
