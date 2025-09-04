@@ -31,7 +31,7 @@ class BiPo212_reader : public AlgBase //Change the name to something more descri
         // Define variables that are globally used
         IDService* idServ;
 	TTimeStamp timestamp, last_muon_timestamp;
-        float total_npe, my_total_npe;
+        float total_npe, my_total_npe,TimeSinceLastMuon;
         std::vector<int> PMTID, peak_positions, DeconvolutedSignal; 
         std::vector<float> charge ,time, corr_time;
 	//float x_CM, y_CM, z_CM;

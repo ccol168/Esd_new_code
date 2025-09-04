@@ -143,6 +143,7 @@ bool BiPo212_reader::initialize() {
     events->Branch("DeconvolutedSignal",&DeconvolutedSignal);
     events->Branch("PEBi",&PEBi);
     events->Branch("PEPo",&PEPo);
+	events->Branch("TimeSinceLastMuon",&TimeSinceLastMuon);
     //events->Branch("Recopx",&CdRecopx);
     //events->Branch("Recopy",&CdRecopy);
     //events->Branch("Recopz",&CdRecopz);
@@ -282,6 +283,8 @@ bool BiPo212_reader::execute() {
 			//LogDebug << "Event vetoed due to distance " << SecondDifference*1000000000 + (timestamp.GetNanoSec() - last_muon_timestamp.GetNanoSec()) << " from muon" << endl; 
 			return true;
 		}
+
+		TimeSinceLastMuon = (SecondDifference*1.e9 + (timestamp.GetNanoSec() - last_muon_timestamp.GetNanoSec()))/1.e9;
 
 		if (total_npe > 25000 || total_npe < 1100) return true;
 
