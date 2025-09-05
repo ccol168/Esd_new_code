@@ -12,9 +12,7 @@
 class TH1F;
 class TTree;
 
-class BiPo212_reader : public AlgBase //Change the name to something more descriptive
-        std::vector<double> KernelVector;
-{
+class BiPo212_reader : public AlgBase {
     public :
         BiPo212_reader() : BiPo212_reader("BiPo212_reader") {}
         BiPo212_reader(const std::string& name); //Constructor, must have same name as the class
@@ -46,6 +44,7 @@ class BiPo212_reader : public AlgBase //Change the name to something more descri
         int nMuonsTotal = 0;
         double runLength = 0.0;
         TTimeStamp minEventTimestamp, maxEventTimestamp;
+	std::vector<double> KernelVector;
 	TSpectrum spectrum;
 	//TTree* wpEvents;
 
