@@ -341,11 +341,11 @@ bool BiPo212_reader::execute() {
   		for (int i=1; i<200; i++) {
     			if(DeconvolutedSignal[i-1] < 5 && DeconvolutedSignal[i] >= 5) {
       				Buffer.clear();
-      				while(true) {
-					Buffer.push_back(DeconvolutedSignal[i]);
-        				if (DeconvolutedSignal[i] < 5) break;
-        				i++;
-      				}
+					   while(i < 200) {
+						   Buffer.push_back(DeconvolutedSignal[i]);
+						   if (DeconvolutedSignal[i] < 5) break;
+						   i++;
+					   }
 				if (Buffer.size() > 20) {
 				       	return true;
 				}
