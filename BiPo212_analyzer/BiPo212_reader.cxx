@@ -267,41 +267,52 @@ bool BiPo212_reader::execute() {
 
         	}
 
-        	total_npe = std::accumulate(charge.begin(),charge.end(),0.0);
+			total_npe = std::accumulate(charge.begin(),charge.end(),0.0);
 
-		if (total_npe > 30000) {
-			last_muon_timestamp = timestamp;
-			//LogDebug << "Found muon at " << timestamp.GetSec() << " " << timestamp.GetNanoSec() << endl;
+			if (total_npe > 30000) {
+				last_muon_timestamp = timestamp;
+				//LogDebug << "Found muon at " << timestamp.GetSec() << " " << timestamp.GetNanoSec() << endl;
 				nMuons++; // Increment muon counter
 				return true;
-		}
-		int SecondDifference = timestamp.GetSec() - last_muon_timestamp.GetSec();
+			}
 
-		if ( (SecondDifference*1000000000 + (timestamp.GetNanoSec() - last_muon_timestamp.GetNanoSec())) < 200000 ) {
-			//LogDebug << "Last muon timestamp " << last_muon_timestamp.GetSec() << " " << last_muon_timestamp.GetNanoSec() << endl;  
-			//LogDebug << "Last muon timestamp " << timestamp.GetSec() << " " << timestamp.GetNanoSec() << endl;  
-			//LogDebug << "Event vetoed due to distance " << SecondDifference*1000000000 + (timestamp.GetNanoSec() - last_muon_timestamp.GetNanoSec()) << " from muon" << endl; 
-			return true;
-		}
+			// Robust check for last_muon_timestamp
+			int SecondDifference = 0;
+			if (last_muon_timestamp.GetSec() == 0 && last_muon_timestamp.GetNanoSec() == 0) {
+				TimeSinceLastMuon = -1;
+			} else {
+				SecondDifference = timestamp.GetSec() - last_muon_timestamp.GetSec();
+				TimeSinceLastMuon = (SecondDifference*1.e9 + (timestamp.GetNanoSec() - last_muon_timestamp.GetNanoSec()))/1.e9;
+			}
 
-		TimeSinceLastMuon = (SecondDifference*1.e9 + (timestamp.GetNanoSec() - last_muon_timestamp.GetNanoSec()))/1.e9;
+			if ( (SecondDifference*1000000000 + (timestamp.GetNanoSec() - last_muon_timestamp.GetNanoSec())) < 200000 ) {
+				//LogDebug << "Last muon timestamp " << last_muon_timestamp.GetSec() << " " << last_muon_timestamp.GetNanoSec() << endl;  
+				//LogDebug << "Last muon timestamp " << timestamp.GetSec() << " " << timestamp.GetNanoSec() << endl;  
+				//LogDebug << "Event vetoed due to distance " << SecondDifference*1000000000 + (timestamp.GetNanoSec() - last_muon_timestamp.GetNanoSec()) << " from muon" << endl; 
+				return true;
+			}
 
-		if (total_npe > 25000 || total_npe < 1100) return true;
+			if (total_npe > 25000 || total_npe < 1100) return true;
 
-		if (time.size() != PMTID.size()) {
-			LogInfo << "ERROR: the time and PMTID vectors do not have the same length" << endl;
-			return true;
-		} 
-		
-		for (int i=0; i<time.size() ; i++) {
-			corr_time.push_back(time[i] - calculate_ToF(CdRecox,CdRecoy,CdRecoz,PMTs_Pos.GetX(PMTID[i]),PMTs_Pos.GetY(PMTID[i]),PMTs_Pos.GetZ(PMTID[i])));
-		}
+			if (time.size() != PMTID.size()) {
+				LogInfo << "ERROR: the time and PMTID vectors do not have the same length" << endl;
+				return true;
+			}
+			if (time.empty()) {
+				LogInfo << "ERROR: time vector is empty" << endl;
+				return true;
+			}
 
-		float MinTime = *std::min_element(corr_time.begin(),corr_time.end());
+			for (int i=0; i<time.size() ; i++) {
+				corr_time.push_back(time[i] - calculate_ToF(CdRecox,CdRecoy,CdRecoz,PMTs_Pos.GetX(PMTID[i]),PMTs_Pos.GetY(PMTID[i]),PMTs_Pos.GetZ(PMTID[i])));
+			}
 
-        	for (auto& element : corr_time) {
-            		element -= MinTime;
-        	}
+			if (!corr_time.empty()) {
+				float MinTime = *std::min_element(corr_time.begin(),corr_time.end());
+				for (auto& element : corr_time) {
+					element -= MinTime;
+				}
+			}
 
 		peak_positions.clear();
 
