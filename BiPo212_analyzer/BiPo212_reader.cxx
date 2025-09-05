@@ -173,16 +173,12 @@ bool BiPo212_reader::initialize() {
     wpEvents->Branch("NPE",&wptotal_npe,"npe/F");
     wpEvents->Branch("TriggerType",&wptrigger_type);
 */
-    std::vector <double> KernelVector = GetKernel("/storage/gpfs_data/juno/junofs/users/ccoletta/BiPo212/Esd_new_code/BiPo212_analyzer/Kernel.root");
-    kernel = new double[200];
-
-    for (int i=0; i<200; i++) {
-	    kernel[i] = KernelVector[i];
-    }
-
-    //spectrum = new TSpectrum();
-    CorrTimesHistogramArr = new double[200];
-
+	KernelVector = GetKernel("/storage/gpfs_data/juno/junofs/users/ccoletta/BiPo212/Esd_new_code/BiPo212_analyzer/Kernel.root");
+	if (KernelVector.size() != 200) {
+		LogError << "Kernel size is not 200!" << std::endl;
+		return false;
+	}
+	
     PMTs_Pos.SetCdPmts("/cvmfs/juno.ihep.ac.cn/el9_amd64_gcc11/Release/Jlatest/data/Detector/Identifier/pmt_CDLPMT_latest.csv");
     last_muon_timestamp.Set(0,true,0,false);
 
@@ -245,8 +241,8 @@ bool BiPo212_reader::execute() {
 		}
 
 		CdRecox = oecevent -> getVertexX();
-                CdRecoy = oecevent -> getVertexY();
-                CdRecoz =  oecevent -> getVertexZ();
+        CdRecoy = oecevent -> getVertexY();
+        CdRecoz =  oecevent -> getVertexZ();
 		CdRecoenergy = oecevent -> getTotalCharge();
 	
         	charge.clear();
@@ -316,43 +312,29 @@ bool BiPo212_reader::execute() {
 
 		peak_positions.clear();
 
-		std::vector <int> CorrTimesHistogram = MakeHistogram(corr_time);
-		for (int i=0; i<200; i++) {
-			CorrTimesHistogramArr[i] = CorrTimesHistogram[i];
-			//LogDebug << i << "\t" << CorrTimesHistogramArr[i] << std::endl;
-		}
-
-		double* paddedWaveform = new double[240];
-		double* paddedKernel = new double[240];
-
+		std::vector<int> CorrTimesHistogram = MakeHistogram(corr_time);
+		std::vector<double> paddedWaveform(240, 0.0);
+		std::vector<double> paddedKernel(240, 0.0);
 		for (int i=0; i<240; i++) {
 			if (i<40) {
 				paddedWaveform[i] = 0;
-				paddedKernel[i] = kernel[i];
+				paddedKernel[i] = KernelVector[i];
 			} else if (i < 200) {
-				paddedWaveform[i] = CorrTimesHistogramArr[i-40];
-				paddedKernel[i] = kernel[i];
+				paddedWaveform[i] = CorrTimesHistogram[i-40];
+				paddedKernel[i] = KernelVector[i];
 			} else {
-			      	paddedWaveform[i] = CorrTimesHistogramArr[i-40];
+				paddedWaveform[i] = CorrTimesHistogram[i-40];
 				paddedKernel[i] = 0;
 			}
 		}
 
 		spectrum.Clear();
-		spectrum.Deconvolution(paddedWaveform,paddedKernel,240,1000,1,1);
-
-		for (int i=0; i<200; i++) {
-			CorrTimesHistogramArr[i] = paddedWaveform[i+40];	
-		}
+		spectrum.Deconvolution(paddedWaveform.data(), paddedKernel.data(), 240, 1000, 1, 1);
 
 		DeconvolutedSignal.clear();
 		for (int i=0; i<200; i++) {
-			DeconvolutedSignal.push_back(CorrTimesHistogramArr[i]);
-			//LogInfo << i << "\t" << CorrTimesHistogramArr[i] << std::endl;
+			DeconvolutedSignal.push_back(paddedWaveform[i+40]);
 		}
-
-		delete [] paddedWaveform;
-		delete [] paddedKernel;
 
 		std::vector <int> Buffer;
   		std::vector <std::pair<int,int>> PeaksFeatures;
@@ -360,7 +342,7 @@ bool BiPo212_reader::execute() {
     			if(CorrTimesHistogramArr[i-1] < 5 && CorrTimesHistogramArr[i] >= 5) {
       				Buffer.clear();
       				while(true) {
-        				Buffer.push_back(CorrTimesHistogramArr[i]);
+					Buffer.push_back(CorrTimesHistogram[i]);
         				if (CorrTimesHistogramArr[i] < 5) break;
         				i++;
       				}
@@ -453,14 +435,7 @@ bool BiPo212_reader::execute() {
 
 bool BiPo212_reader::finalize() {
 
-    if (kernel) {
-        delete[] kernel;
-        kernel = nullptr;
-    }
-    if (CorrTimesHistogramArr) {
-        delete[] CorrTimesHistogramArr;
-        CorrTimesHistogramArr = nullptr;
-    }
+	// No manual delete needed for local vectors
 	// Save muon count to output ROOT file using RootWriter
 	// Fill summary tree with final muon count and run length
 	nMuonsTotal = nMuons;

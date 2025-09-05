@@ -13,6 +13,7 @@ class TH1F;
 class TTree;
 
 class BiPo212_reader : public AlgBase //Change the name to something more descriptive
+        std::vector<double> KernelVector;
 {
     public :
         BiPo212_reader() : BiPo212_reader("BiPo212_reader") {}
@@ -31,14 +32,13 @@ class BiPo212_reader : public AlgBase //Change the name to something more descri
         // Define variables that are globally used
         IDService* idServ;
 	TTimeStamp timestamp, last_muon_timestamp;
-        float total_npe, my_total_npe,TimeSinceLastMuon;
+        float total_npe, my_total_npe, TimeSinceLastMuon = -1;
         std::vector<int> PMTID, peak_positions, DeconvolutedSignal; 
         std::vector<float> charge ,time, corr_time;
 	//float x_CM, y_CM, z_CM;
         TString trigger_type; //, wptrigger_type;
 	float CdRecox, CdRecoy, CdRecoz, CdRecoenergy, PEBi, PEPo; //, CdRecopx, CdRecopy, CdRecopz, CdRecoenergy,CdRecoPESum,CdRecot0, CdRecoPositionQuality, CdRecoEnergyQuality;
 	JUNO_PMTs PMTs_Pos;
-	double* CorrTimesHistogramArr;
 	float Interface_level;
 
         TTree* events ;
@@ -46,7 +46,6 @@ class BiPo212_reader : public AlgBase //Change the name to something more descri
         int nMuonsTotal = 0;
         double runLength = 0.0;
         TTimeStamp minEventTimestamp, maxEventTimestamp;
-	double* kernel;
 	TSpectrum spectrum;
 	//TTree* wpEvents;
 
