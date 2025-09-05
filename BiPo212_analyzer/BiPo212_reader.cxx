@@ -339,11 +339,11 @@ bool BiPo212_reader::execute() {
 		std::vector <int> Buffer;
   		std::vector <std::pair<int,int>> PeaksFeatures;
   		for (int i=1; i<200; i++) {
-    			if(CorrTimesHistogramArr[i-1] < 5 && CorrTimesHistogramArr[i] >= 5) {
+    			if(DeconvolutedSignal[i-1] < 5 && DeconvolutedSignal[i] >= 5) {
       				Buffer.clear();
       				while(true) {
-					Buffer.push_back(CorrTimesHistogram[i]);
-        				if (CorrTimesHistogramArr[i] < 5) break;
+					Buffer.push_back(DeconvolutedSignal[i]);
+        				if (DeconvolutedSignal[i] < 5) break;
         				i++;
       				}
 				if (Buffer.size() > 20) {
