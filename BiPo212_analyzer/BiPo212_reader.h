@@ -4,6 +4,7 @@
 #include "SniperKernel/AlgBase.h"
 #include "EvtNavigator/NavBuffer.h"
 #include "Identifier/IDService.h"
+#include "OECTagSvc/OECTagSvc.h"
 #include <fstream>
 #include <map>
 #include <TSpectrum.h>
@@ -26,18 +27,21 @@ class BiPo212_reader : public AlgBase {
 
         int m_iEvt, NPeaks; // To count the loops
         JM::NavBuffer* m_buf; // Our buffer with the events
+        OECTagSvc* m_tagsvc;
 	int cdEvtID = 0;        
         // Define variables that are globally used
         IDService* idServ;
 	TTimeStamp timestamp, last_muon_timestamp;
         float total_npe, my_total_npe, TimeSinceLastMuon = -1;
-        std::vector<int> PMTID, peak_positions, DeconvolutedSignal; 
-        std::vector<float> charge ,time, corr_time;
-	//float x_CM, y_CM, z_CM;
+        std::vector<int> PMTID, peak_positions; 
+        std::vector<float> charge ,time, corr_time, DeconvolutedSignal;
         TString trigger_type; //, wptrigger_type;
-	float CdRecox, CdRecoy, CdRecoz, CdRecoenergy, PEBi, PEPo; //, CdRecopx, CdRecopy, CdRecopz, CdRecoenergy,CdRecoPESum,CdRecot0, CdRecoPositionQuality, CdRecoEnergyQuality;
+	int NHitsBi, NHitsPo;
+        float CdRecox, CdRecoy, CdRecoz, CdRecoenergy, PEBi, PEPo; //, CdRecopx, CdRecopy, CdRecopz, CdRecoenergy,CdRecoPESum,CdRecot0, CdRecoPositionQuality, CdRecoEnergyQuality;
 	JUNO_PMTs PMTs_Pos;
 	float Interface_level;
+
+        bool LastEventWasMuon;
 
         TTree* events ;
         TTree* summaryTree ;
