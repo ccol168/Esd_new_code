@@ -47,7 +47,9 @@ std::vector<int> MakeHistogram (std::vector <float> inVec) {
 
 	for (auto element : inVec) {
 		int BinIndex = (element - MinBinTime) / BinSize ;
-		Histogram[BinIndex]++;
+		if (BinIndex >= 0 && BinIndex < BinsNumber) {
+			Histogram[BinIndex]++;
+		}
 	}
 
 	return Histogram;
@@ -321,7 +323,10 @@ bool BiPo212_reader::execute() {
 		const auto& triggerelement = triggerevent -> triggerType();
 		trigger_type = triggerelement[0];
 
-		if (triggerelement[0] == "Periodic") return true;
+		if (triggerelement[0] == "Periodic") {
+			LogInfo << "Periodic trigger event: closing" << std::endl;
+		}
+		
 
 		// Find muons via OEC and apply OEC muon veto (can be extended offline with TimeSinceLastMuon)
 		if ( m_tagsvc -> isMuon(oecevent) ) {
@@ -331,6 +336,7 @@ bool BiPo212_reader::execute() {
 				LastEventWasMuon = true;
 				nMuons++; 
 			}
+			LogInfo << "Muon-related event: closing" << std::endl;
 			return true;
 		} else {
 			LastEventWasMuon = false;
@@ -370,7 +376,10 @@ bool BiPo212_reader::execute() {
 
 		total_npe = std::accumulate(charge.begin(),charge.end(),0.0);
 
-		if (total_npe > 25000 || total_npe < 1100) return true;
+		if (total_npe > 25000 || total_npe < 1100) {
+			LogInfo << "Out of energy cut: closing (" << total_npe << " PE)" << std::endl;
+			return true;
+		}
 
 		if (time.size() != PMTID.size()) {
 			LogInfo << "ERROR: the time and PMTID vectors do not have the same length" << endl;
@@ -393,13 +402,17 @@ bool BiPo212_reader::execute() {
 		}
 
 		std::vector <int> CorrTimesHistogram = MakeHistogram(corr_time);
+		LogInfo << "Built CorrTimesHistogram " << std::endl;
 
 		peak_positions.clear();
 		DeconvolutedSignal.clear();
 
 		SelectPeaks(CorrTimesHistogram,KernelVector,spectrum,BinsNumber,peak_positions,DeconvolutedSignal);
+		LogInfo << "Peaks selected correctly" << std::endl;
 
 		NPeaks = peak_positions.size();
+
+		LogInfo << "Found " << NPeaks << " Peaks" << std::endl;
 		
 		if (NPeaks == 2) {
 			 
