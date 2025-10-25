@@ -326,30 +326,6 @@ bool BiPo212_reader::execute() {
 		if (triggerelement[0] == "Periodic") {
 			LogInfo << "Periodic trigger event: closing" << std::endl;
 		}
-		
-
-		// Find muons via OEC and apply OEC muon veto (can be extended offline with TimeSinceLastMuon)
-		if ( m_tagsvc -> isMuon(oecevent) ) {
-			if (LastEventWasMuon) LastEventWasMuon = true;
-			else {
-				last_muon_timestamp = timestamp;
-				LastEventWasMuon = true;
-				nMuons++; 
-			}
-			LogInfo << "Muon-related event: closing" << std::endl;
-			return true;
-		} else {
-			LastEventWasMuon = false;
-		}
-
-		// Save difference to last muon
-		int SecondDifference = 0;
-		if (last_muon_timestamp.GetSec() == 0 && last_muon_timestamp.GetNanoSec() == 0) {
-			TimeSinceLastMuon = -1;
-		} else {
-			SecondDifference = timestamp.GetSec() - last_muon_timestamp.GetSec();
-			TimeSinceLastMuon = (SecondDifference*1.e9 + (timestamp.GetNanoSec() - last_muon_timestamp.GetNanoSec()))/1.e9;
-		}
 
 		CdRecox = oecevent -> getVertexX();
         CdRecoy = oecevent -> getVertexY();
@@ -375,6 +351,29 @@ bool BiPo212_reader::execute() {
 		}
 
 		total_npe = std::accumulate(charge.begin(),charge.end(),0.0);
+
+		// Find muons using NPE veto. If there are multiple high PE events in a row save just the first
+		if ( total_npe > 30000 ) {
+			if (LastEventWasMuon) LastEventWasMuon = true;
+			else {
+				last_muon_timestamp = timestamp;
+				LastEventWasMuon = true;
+				nMuons++; 
+			}
+			LogInfo << "Muon-related event: closing" << std::endl;
+			return true;
+		} else {
+			LastEventWasMuon = false;
+		}
+
+		// Save difference to last muon
+		int SecondDifference = 0;
+		if (last_muon_timestamp.GetSec() == 0 && last_muon_timestamp.GetNanoSec() == 0) {
+			TimeSinceLastMuon = -1;
+		} else {
+			SecondDifference = timestamp.GetSec() - last_muon_timestamp.GetSec();
+			TimeSinceLastMuon = (SecondDifference*1.e9 + (timestamp.GetNanoSec() - last_muon_timestamp.GetNanoSec()))/1.e9;
+		}
 
 		if (total_npe > 25000 || total_npe < 1100) {
 			LogInfo << "Out of energy cut: closing (" << total_npe << " PE)" << std::endl;
