@@ -20,7 +20,7 @@ def is_valid_root_file(file_path, tree_name):
         return False
 
 def merge_runs(input_folder, output_folder, run_min, run_max, tree_name="CdEvents"):
-    pattern = re.compile(r"RUN(\d+)_.*\.root")
+    pattern = re.compile(r"RUN_(\d+)_.*\.root")
     runs = {}
     for filename in os.listdir(input_folder):
         match = pattern.match(filename)

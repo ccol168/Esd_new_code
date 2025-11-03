@@ -15,11 +15,11 @@ def get_valid_runs(run_list_file, version_dir_esd, version_dir_rtraw):
 
     for run_str in runs:
         run = int(run_str)
-        dir_lvl1 = f"{(run // 10000) * 10000:08d}"
+        dir_lvl1 = f"{(run // 1000) * 1000:08d}"
         dir_lvl2 = f"{(run // 100) * 100:08d}"
 
-        dir_esd = version_dir_esd / "global_trigger" / dir_lvl1 / dir_lvl2 / f"{run:05d}"
-        dir_rtraw = version_dir_rtraw / "global_trigger" / dir_lvl1 / dir_lvl2 / f"{run:05d}"
+        dir_esd = version_dir_esd / "global_trigger" / dir_lvl1 / dir_lvl2 / str(run)
+        dir_rtraw = version_dir_rtraw / "global_trigger" / dir_lvl1 / dir_lvl2 / str(run)
 
         if not dir_esd.is_dir() or not dir_rtraw.is_dir():
             print(f"Skipping run {run}: missing directory")
@@ -51,10 +51,10 @@ def generate_list_files(runs, version_dir, list_dir, file_ext):
         run = int(run_str)
 
         # Correct directory naming
-        dir_lvl1 = f"{(run // 10000) * 10000:08d}"  # e.g., 10554 -> 00010000
+        dir_lvl1 = f"{(run // 1000) * 1000:08d}"  # e.g., 10554 -> 00010000
         dir_lvl2 = f"{(run // 100) * 100:08d}"      # e.g., 10554 -> 00010500
 
-        run_dir = version_dir / "global_trigger" / dir_lvl1 / dir_lvl2 / f"{run:05d}"
+        run_dir = version_dir / "global_trigger" / dir_lvl1 / dir_lvl2 / str(run)
 
         if not run_dir.is_dir():
             print(f"Warning: Directory not found for run {run}: {run_dir}")
