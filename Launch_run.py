@@ -25,8 +25,8 @@ def get_valid_runs(run_list_file, version_dir_esd, version_dir_rtraw):
             print(f"Skipping run {run}: missing directory")
             continue
 
-        files_esd = list(dir_esd.glob(f"RUN.{run}.JUNODAQ.Physics.ds-2.global_trigger.*.esd"))
-        files_rtraw = list(dir_rtraw.glob(f"RUN.{run}.JUNODAQ.Physics.ds-2.global_trigger.*.rtraw"))
+        files_esd = list(dir_esd.glob(f"RUN.{run}.JUNODAQ.Physics.ds-*.global_trigger.*.esd"))
+        files_rtraw = list(dir_rtraw.glob(f"RUN.{run}.JUNODAQ.Physics.ds-*.global_trigger.*.rtraw"))
 
         if len(files_esd) == 0 or len(files_rtraw) == 0:
             print(f"Skipping run {run}: no files found")
@@ -60,7 +60,7 @@ def generate_list_files(runs, version_dir, list_dir, file_ext):
             print(f"Warning: Directory not found for run {run}: {run_dir}")
             continue
 
-        files = sorted(run_dir.glob(f"RUN.{run}.JUNODAQ.Physics.ds-2.global_trigger.*.{file_ext}"))
+        files = sorted(run_dir.glob(f"RUN.{run}.JUNODAQ.Physics.ds-*.global_trigger.*.{file_ext}"))
         if not files:
             print(f"Warning: No matching files for run {run}")
             continue
@@ -132,8 +132,8 @@ def write_sub_file(sh_file, run, idx, script_dir):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate JUNO RTRAW .list, .sh, .sub, and master submit script.")
-    parser.add_argument("--versionesd", type=str, default="J25.5.0.b", help="Software version (default J25.5.0.b)")
-    parser.add_argument("--versionrtraw", type=str, default="J25.5.0", help="Software version (default J25.5.0)")
+    parser.add_argument("--versionesd", type=str, default="J25.7.0", help="Software version (default J25.7.0)")
+    parser.add_argument("--versionrtraw", type=str, default="J25.7.0", help="Software version (default J25.7.0)")
     parser.add_argument("--runlist", type=str, required=True, help="Text file with run numbers")
     args = parser.parse_args()
 
