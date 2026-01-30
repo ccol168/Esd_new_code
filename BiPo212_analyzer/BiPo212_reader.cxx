@@ -325,6 +325,7 @@ bool BiPo212_reader::execute() {
 
 		if (triggerelement[0] == "Periodic") {
 			LogInfo << "Periodic trigger event: closing" << std::endl;
+			return true;
 		}
 
 		CdRecox = oecevent -> getVertexX();
