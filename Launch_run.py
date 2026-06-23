@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 import re
 
-FILES_PER_LIST = 100  # Number of files per output list
+FILES_PER_LIST = 500  # Number of files per output list
 BASE_PATH_ESD = Path("/storage/gpfs_data/juno/junofs/production/storm/dirac/juno/juno-kup/")
 BASE_PATH_RTRAW = Path("/storage/gpfs_data/juno/junofs/production/storm/dirac/juno/juno-rtraw/")
 
@@ -117,6 +117,7 @@ def write_sub_file(sh_file, run, idx, script_dir):
 
     with open(sub_filename, "w") as sub:
         sub.write("universe = vanilla\n")
+        sub.write("primary_unix_group = juno\n")
         sub.write(f"executable = {sh_file.resolve()}\n")
         sub.write(f"log = {log_file}\n")
         sub.write(f"output = {out_file}\n")
